@@ -121,16 +121,36 @@ class TelegramNotifier:
         btc_regime: Dict[str, Any],
         ready_count: int,
         watchlist_count: int,
-        top_leader: str
+        top_leader: str,
+        almost_tradeable: Optional[List[Dict[str, Any]]] = None
     ) -> bool:
-        """Sends a concise status line after each scan so user knows the bot is alive."""
+        """Sends a rich status and pipeline report after each hourly scan."""
         status = "BULLISH 🟢" if btc_regime.get("regime_active", True) else "BEARISH 🔴"
         msg = (
-            f"⚡ <b>MEXC Hourly Scan Complete</b>\n"
-            f"• BTC Regime: <b>{status}</b> (${btc_regime.get('price', 0):,.0f})\n"
-            f"• Ready Entries: <b>{ready_count}</b> | Watchlist: <b>{watchlist_count}</b>\n"
-            f"• Top Leader: <code>{top_leader}</code>"
+            f"⚡ <b>MEXC Hourly Market & Setup Pipeline</b> ⚡\n\n"
+            f"• <b>BTC Regime:</b> {status} (<code>${btc_regime.get('price', 0):,.0f}</code>)\n"
+            f"• <b>Ready Entries:</b> <b>{ready_count}</b>\n"
+            f"• <b>Active Pullbacks (Watchlist):</b> <b>{watchlist_count}</b>\n"
+            f"• <b>Top Market Leader:</b> <code>{top_leader}</code>\n"
         )
+
+        if almost_tradeable and len(almost_tradeable) > 0:
+            msg += "\n🔍 <b>Almost Tradeable / Pipeline Coins:</b>\n"
+            for idx, item in enumerate(almost_tradeable[:4], 1):
+                sym = item.get("symbol", "")
+                score = item.get("leadership_score", 0)
+                price = item.get("price", 0)
+                missing = item.get("missing_condition", "")
+                curr_status = item.get("current_status", "")
+                rs7 = item.get("rs_7d", 0)
+                msg += (
+                    f"\n<b>{idx}. <code>{sym}</code></b> (${price:.4f} | Score: <b>{score:.1f}</b> | 7D: {rs7:.0f}%)\n"
+                    f"   ⚠️ <b>Missing:</b> {missing}\n"
+                    f"   📊 <b>Status:</b> <i>{curr_status}</i>\n"
+                )
+        else:
+            msg += "\n<i>No leaders currently near setup thresholds.</i>\n"
+
         return self.send_message(msg)
 
     # ==========================================

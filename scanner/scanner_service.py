@@ -203,6 +203,7 @@ class ScannerService:
                 "rs_90d": round(r90, 1),
                 "daily_trend": bool(curr_row.get("daily_uptrend", False)),
                 "four_h_trend": bool(curr_row.get("four_hour_uptrend", False)),
+                "ext_from_ema20": float(curr_row.get("ext_from_ema20", 0.0)),
                 "williams_r": round(float(curr_row.get("williams_r", -50.0)), 1),
                 "pullback_atr": round(float(curr_row.get("pullback_depth_atr", 0.0)), 2),
                 "volume_ratio": round(float(curr_row.get("volume_ratio", 1.0)), 2),
@@ -217,6 +218,44 @@ class ScannerService:
         leaders_df = pd.DataFrame(leaders_list).sort_values("leadership_score", ascending=False).reset_index(drop=True)
         signals_df = pd.DataFrame(signal_results).sort_values("leadership_score", ascending=False).reset_index(drop=True)
 
+        # Diagnose Almost-Tradeable / Pipeline Candidates
+        almost_tradeable = []
+        for s in signal_results:
+            if s["is_ready"]:
+                continue
+            if s["leadership_score"] >= 60 or s["rs_7d"] >= 70:
+                missing = ""
+                curr_status = ""
+                if not s["daily_trend"] or not s["four_h_trend"]:
+                    missing = "Daily/4H Moving Average Trend Alignment"
+                    curr_status = "High RS but moving average structure not yet bullish"
+                elif s.get("ext_from_ema20", 0.0) > 0.15:
+                    missing = f"Extended (+{s.get('ext_from_ema20', 0.0)*100:.1f}% > 15% max from 20D EMA)"
+                    curr_status = "Parabolic move; waiting for consolidation"
+                elif s["pullback_atr"] < 1.0:
+                    missing = f"Pullback Depth ({s['pullback_atr']:.2f} ATR / 1.0 ATR required)"
+                    curr_status = "Trending up strongly; no pullback yet"
+                elif s["williams_r"] > -80:
+                    missing = f"Williams %R dip ({s['williams_r']:.1f} > -80)"
+                    curr_status = "Pullback started but momentum not yet oversold"
+                elif s["williams_r"] <= -80:
+                    missing = f"Williams %R recovery ({s['williams_r']:.1f} <= -80)"
+                    curr_status = "Oversold dip active; waiting for cross back above -80"
+                else:
+                    missing = "Price Action confirmation candle"
+                    curr_status = "Waiting for candle close above previous high"
+
+                almost_tradeable.append({
+                    "symbol": s["symbol"],
+                    "leadership_score": s["leadership_score"],
+                    "rs_7d": s["rs_7d"],
+                    "price": s["price"],
+                    "missing_condition": missing,
+                    "current_status": curr_status
+                })
+
+        almost_tradeable = sorted(almost_tradeable, key=lambda x: x["leadership_score"], reverse=True)
+
         return {
             "timestamp": str(scan_time),
             "btc_regime": btc_regime_info,
@@ -225,4 +264,5 @@ class ScannerService:
             "signals": signals_df,
             "ready_signals": signals_df[signals_df["state"] == "READY"],
             "active_setups": signals_df[signals_df["state"].isin(["READY", "SETUP_DEVELOPING"])],
+            "almost_tradeable": almost_tradeable,
         }

@@ -93,6 +93,41 @@ def main():
         "return_30d_pct": 7.51
     })
 
+    # 4. Send Sample Hourly Heartbeat with Almost-Tradeable Pipeline
+    print("\n4. Sending Sample Hourly Heartbeat & Pipeline Alert...")
+    notifier.send_hourly_heartbeat(
+        btc_regime={"regime_active": True, "price": 84750.0},
+        ready_count=0,
+        watchlist_count=1,
+        top_leader="ENAUSDT",
+        almost_tradeable=[
+            {
+                "symbol": "ENAUSDT",
+                "leadership_score": 95.2,
+                "rs_7d": 100.0,
+                "price": 0.2428,
+                "missing_condition": "Williams %R dip (-42.1 > -80 threshold)",
+                "current_status": "Strong leader, waiting for oversold momentum dip"
+            },
+            {
+                "symbol": "NEARUSDT",
+                "leadership_score": 90.5,
+                "rs_7d": 86.4,
+                "price": 5.0068,
+                "missing_condition": "Pullback depth (0.42 ATR / 1.0 ATR required)",
+                "current_status": "Trending up strongly; no pullback yet"
+            },
+            {
+                "symbol": "ONDOUSDT",
+                "leadership_score": 87.0,
+                "rs_7d": 95.5,
+                "price": 0.5450,
+                "missing_condition": "Pullback depth (0.28 ATR / 1.0 ATR required)",
+                "current_status": "Price near recent high; needs mean reversion"
+            }
+        ]
+    )
+
     print("\nTest completed successfully!")
 
 

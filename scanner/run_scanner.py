@@ -66,10 +66,17 @@ def main():
             if not setups.empty:
                 print(setups[["symbol", "state", "leadership_score", "williams_r", "pullback_atr", "explanation"]].head(10).to_string(index=False))
 
+            pipeline = res.get("almost_tradeable", [])
+            print(f"\n[ALMOST TRADEABLE / PIPELINE COINS: {len(pipeline)}]")
+            for p in pipeline[:5]:
+                print(f"  -> {p['symbol']} (${p['price']:.4f} | Score: {p['leadership_score']:.1f}): Missing -> {p['missing_condition']}")
+
             # Send hourly heartbeat if looping
             if args.loop:
                 top_sym = res["leaders"]["symbol"].iloc[0] if not res["leaders"].empty else "None"
-                scanner.notifier.send_hourly_heartbeat(regime, len(ready), len(setups), top_sym)
+                scanner.notifier.send_hourly_heartbeat(
+                    regime, len(ready), len(setups), top_sym, almost_tradeable=pipeline
+                )
 
             if args.once or not args.loop:
                 break
