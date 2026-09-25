@@ -19,6 +19,16 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import argparse
 import pandas as pd
+
+try:
+    from dotenv import load_dotenv
+    for p in [".env", "../.env", "/opt/mexc-williams-system/.env", os.path.expanduser("~/LarryWilliams/.env")]:
+        if os.path.exists(p):
+            load_dotenv(p)
+            break
+except ImportError:
+    pass
+
 from alerts.telegram_notifier import TelegramNotifier
 
 
