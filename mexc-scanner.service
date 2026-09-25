@@ -1,0 +1,17 @@
+[Unit]
+Description=MEXC Larry Williams Crypto Scanner & Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mexc-williams-system
+EnvironmentFile=/opt/mexc-williams-system/.env
+ExecStart=/opt/mexc-williams-system/venv/bin/python scanner/run_scanner.py --loop --interval 3600
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

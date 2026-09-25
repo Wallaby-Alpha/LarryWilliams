@@ -1,0 +1,28 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Environment and secrets (DO NOT COMMIT)
+.env
+
+# Local data cache and logs
+data_storage/
+*.log
+.system_generated/
+
+# Reports output
+reports/*.csv
+
+# Streamlit & OS cache
+.streamlit/
+.DS_Store
+Thumbs.db

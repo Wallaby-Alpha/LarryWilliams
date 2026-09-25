@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mexc-scanner:
+    build: .
+    container_name: mexc-williams-scanner
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data_storage:/app/data_storage
+      - ./reports:/app/reports
+    command: ["python", "-u", "scanner/run_scanner.py", "--loop", "--interval", "3600"]
+
+  # Optional Streamlit Dashboard
+  mexc-dashboard:
+    build: .
+    container_name: mexc-williams-dashboard
+    restart: always
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data_storage:/app/data_storage
+      - ./reports:/app/reports
+    command: ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
