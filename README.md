@@ -143,8 +143,8 @@ The scanner sends two distinct tiers of alerts directly to your phone via Telegr
    ```
 3. Clone your GitHub repository and run the deploy script:
    ```bash
-   git clone https://github.com/<YOUR_USERNAME>/mexc-williams-system.git
-   cd mexc-williams-system
+   git clone https://github.com/Wallaby-Alpha/LarryWilliams.git
+   cd LarryWilliams
    chmod +x deploy.sh
    ./deploy.sh
    ```
