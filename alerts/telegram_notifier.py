@@ -18,6 +18,16 @@ import requests
 from typing import Dict, Any, Optional, List
 import pandas as pd
 
+# Load environment variables automatically across possible deployment paths
+try:
+    from dotenv import load_dotenv
+    for p in [".env", "../.env", "/opt/mexc-williams-system/.env", os.path.expanduser("~/LarryWilliams/.env")]:
+        if os.path.exists(p):
+            load_dotenv(p)
+            break
+except ImportError:
+    pass
+
 logger = logging.getLogger("TelegramNotifier")
 
 
@@ -34,16 +44,16 @@ class TelegramNotifier:
         enabled: bool = True
     ):
         # Read from environment variables if not passed directly
-        self.bot_token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-        self.chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID", "").strip()
+        self.bot_token = (bot_token or os.getenv("TELEGRAM_BOT_TOKEN", "")).strip()
+        self.chat_id = (chat_id or os.getenv("TELEGRAM_CHAT_ID", "")).strip()
         self.history_file = history_file
-        self.enabled = enabled and bool(self.bot_token) and bool(self.chat_id)
+        self.enabled = enabled and bool(self.bot_token) and bool(self.chat_id) and (self.bot_token != "your_token_from_botfather")
         
         self.base_url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage" if self.bot_token else ""
         self.alert_history = self._load_history()
 
         if not self.enabled:
-            logger.info("Telegram notifications disabled or credentials missing. Alerts will print to console.")
+            logger.warning("Telegram credentials missing or dummy placeholder detected in .env. Notifications will print to console only.")
 
     def _load_history(self) -> Dict[str, Any]:
         """Loads alert state history from disk to prevent duplicate notifications."""
@@ -94,6 +104,34 @@ class TelegramNotifier:
         except Exception as e:
             logger.error(f"Failed to connect to Telegram API: {e}")
             return False
+
+    def send_startup_alert(self) -> bool:
+        """Sends an immediate message confirming the bot is online and connected."""
+        msg = (
+            "🚀 <b>MEXC Larry Williams Scanner is ONLINE!</b> 🚀\n\n"
+            "🤖 Bot connected successfully and monitoring markets 24/7 on DigitalOcean.\n"
+            "⏱ Scans run at the top of every hour.\n"
+            "🔔 You will receive <b>Watchlist Heads-Up</b> alerts when leaders begin pulling back, "
+            "and <b>Trade Entry</b> alerts with Entry, Stop, and Targets when confirmed."
+        )
+        return self.send_message(msg)
+
+    def send_hourly_heartbeat(
+        self,
+        btc_regime: Dict[str, Any],
+        ready_count: int,
+        watchlist_count: int,
+        top_leader: str
+    ) -> bool:
+        """Sends a concise status line after each scan so user knows the bot is alive."""
+        status = "BULLISH 🟢" if btc_regime.get("regime_active", True) else "BEARISH 🔴"
+        msg = (
+            f"⚡ <b>MEXC Hourly Scan Complete</b>\n"
+            f"• BTC Regime: <b>{status}</b> (${btc_regime.get('price', 0):,.0f})\n"
+            f"• Ready Entries: <b>{ready_count}</b> | Watchlist: <b>{watchlist_count}</b>\n"
+            f"• Top Leader: <code>{top_leader}</code>"
+        )
+        return self.send_message(msg)
 
     # ==========================================
     # 1. ACTIONABLE TRADE ENTRY ALERT

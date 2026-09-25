@@ -35,6 +35,10 @@ def main():
     cfg = load_config(args.config)
     scanner = ScannerService(cfg)
 
+    # Send startup confirmation alert so user knows bot is online
+    if args.loop:
+        scanner.notifier.send_startup_alert()
+
     while True:
         try:
             res = scanner.scan_once()
@@ -61,6 +65,11 @@ def main():
             print(f"\n[ACTIVE DEVELOPING SETUPS: {len(setups)}]")
             if not setups.empty:
                 print(setups[["symbol", "state", "leadership_score", "williams_r", "pullback_atr", "explanation"]].head(10).to_string(index=False))
+
+            # Send hourly heartbeat if looping
+            if args.loop:
+                top_sym = res["leaders"]["symbol"].iloc[0] if not res["leaders"].empty else "None"
+                scanner.notifier.send_hourly_heartbeat(regime, len(ready), len(setups), top_sym)
 
             if args.once or not args.loop:
                 break
