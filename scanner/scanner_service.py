@@ -229,24 +229,25 @@ class ScannerService:
         for s in signal_results:
             if s["is_ready"]:
                 continue
-            if s["leadership_score"] >= 60 or s["rs_7d"] >= 70:
+            max_ext = float(self.config.get("extension_filter", {}).get("max_extension_pct", 0.20))
+            if s["leadership_score"] >= 60 or s["rs_7d"] >= 60 or s["rs_30d"] >= 70:
                 missing = ""
                 curr_status = ""
                 if not s["daily_trend"] or not s["four_h_trend"]:
                     missing = "Daily/4H Moving Average Trend Alignment"
                     curr_status = "High RS but moving average structure not yet bullish"
-                elif s.get("ext_from_ema20", 0.0) > 0.15:
-                    missing = f"Extended (+{s.get('ext_from_ema20', 0.0)*100:.1f}% > 15% max from 20D EMA)"
+                elif s.get("ext_from_ema20", 0.0) > max_ext:
+                    missing = f"Extended (+{s.get('ext_from_ema20', 0.0)*100:.1f}% > {int(max_ext*100)}% max from 20D EMA)"
                     curr_status = "Parabolic move; waiting for consolidation"
                 elif s["pullback_atr"] < 1.0:
                     missing = f"Pullback Depth ({s['pullback_atr']:.2f} ATR / 1.0 ATR required)"
                     curr_status = "Trending up strongly; no pullback yet"
-                elif s["williams_r"] > -80:
-                    missing = f"Williams %R dip ({s['williams_r']:.1f} > -80)"
-                    curr_status = "Pullback started but momentum not yet oversold"
                 elif s["williams_r"] <= -80:
                     missing = f"Williams %R recovery ({s['williams_r']:.1f} <= -80)"
                     curr_status = "Oversold dip active; waiting for cross back above -80"
+                elif s["williams_r"] > -80:
+                    missing = f"Williams %R dip ({s['williams_r']:.1f} > -80)"
+                    curr_status = "Pullback started but momentum not yet oversold"
                 else:
                     missing = "Price Action confirmation candle"
                     curr_status = "Waiting for candle close above previous high"

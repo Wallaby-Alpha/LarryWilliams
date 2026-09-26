@@ -47,8 +47,9 @@ btc_regime:
   use_williams_filter: false
 
 relative_strength:
-  rs_7d_min_percentile: 80.0   # Configurable: 60, 70, 75, 80, 85, 90
-  rs_30d_min_percentile: 80.0  # Configurable: 60, 70, 75, 80, 85, 90
+  composite_score_min: 70.0    # Composite Leadership Score threshold (40% 30D + 35% 7D + 25% 90D)
+  rs_30d_min_percentile: 70.0  # Macro 30-day leader threshold
+  rs_7d_min_percentile: 40.0   # 7-day floor (allows multi-day pullbacks without disqualifying leaders)
   rs_90d_min_percentile: 0.0   # Optional filter
   composite_weights:
     weight_30d: 0.40           # 40% 30-day relative strength
@@ -69,7 +70,7 @@ extension_filter:
   enabled: true
   ma_type: "EMA"               # EMA or SMA
   ma_period: 20                # 20D EMA
-  max_extension_pct: 0.15      # Default 15% (test 5%, 10%, 15%, 20%, 25%)
+  max_extension_pct: 0.20      # 20% max extension (protects against vertical blow-off chases while allowing healthy crypto pullbacks)
 
 pullback:
   model: "model_a"             # model_a: >= 1 ATR drop from swing high

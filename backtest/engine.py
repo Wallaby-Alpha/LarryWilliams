@@ -61,9 +61,10 @@ class BacktestEngine:
         coin_feature_tables: Dict[str, pd.DataFrame] = {}
         coin_bar_dict: Dict[str, Dict[Any, Dict[str, Any]]] = {}
 
-        min_7d = float(self.config.get("relative_strength", {}).get("rs_7d_min_percentile", 80.0))
-        min_30d = float(self.config.get("relative_strength", {}).get("rs_30d_min_percentile", 80.0))
-        max_ext = float(self.config.get("extension_filter", {}).get("max_extension_pct", 0.15))
+        min_composite = float(self.config.get("relative_strength", {}).get("composite_score_min", 70.0))
+        min_30d = float(self.config.get("relative_strength", {}).get("rs_30d_min_percentile", 70.0))
+        min_7d = float(self.config.get("relative_strength", {}).get("rs_7d_min_percentile", 40.0))
+        max_ext = float(self.config.get("extension_filter", {}).get("max_extension_pct", 0.20))
         min_pb_atr = float(self.config.get("pullback", {}).get("min_pullback_atr", 1.0))
         min_pb_pct = float(self.config.get("pullback", {}).get("min_pullback_pct", 0.02))
         max_pb_pct = float(self.config.get("pullback", {}).get("max_pullback_pct", 0.08))
@@ -89,7 +90,11 @@ class BacktestEngine:
 
             # --- Vectorized Condition Flags ---
             # RS leadership
-            c_leader = (feat_df["rs_7d_pctile"] >= min_7d) & (feat_df["rs_30d_pctile"] >= min_30d)
+            c_leader = (
+                (feat_df["leadership_score"] >= min_composite) & (feat_df["rs_7d_pctile"] >= min_7d)
+            ) | (
+                (feat_df["rs_30d_pctile"] >= min_30d) & (feat_df["rs_7d_pctile"] >= min_7d)
+            )
             # Trend
             c_trend = feat_df["daily_uptrend"] & feat_df["four_hour_uptrend"]
             # Extension

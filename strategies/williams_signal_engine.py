@@ -236,12 +236,19 @@ class WilliamsSignalEngine:
         # B. Relative Strength / Leadership
         rs_7d = row.get("rs_7d_pctile", 0.0)
         rs_30d = row.get("rs_30d_pctile", 0.0)
-        min_7d = self.rs_cfg.get("rs_7d_min_percentile", 80.0)
-        min_30d = self.rs_cfg.get("rs_30d_min_percentile", 80.0)
-        
-        is_leader = (rs_7d >= min_7d) and (rs_30d >= min_30d)
+        lead_score = row.get("leadership_score", 0.0)
+
+        min_composite = self.rs_cfg.get("composite_score_min", 70.0)
+        min_30d = self.rs_cfg.get("rs_30d_min_percentile", 70.0)
+        min_7d = self.rs_cfg.get("rs_7d_min_percentile", 40.0)
+
+        # Leader qualification:
+        # A coin qualifies if:
+        # 1. Composite Leadership Score >= min_composite AND 7D RS >= min_7d (macro leader in a healthy pullback)
+        # OR 2. Both 30D RS >= min_30d AND 7D RS >= min_7d
+        is_leader = (lead_score >= min_composite and rs_7d >= min_7d) or (rs_30d >= min_30d and rs_7d >= min_7d)
         if not is_leader:
-            return {"state": "NO_SETUP", "is_ready": False, "reason": f"RS below threshold (7D: {rs_7d:.1f}, 30D: {rs_30d:.1f})"}
+            return {"state": "NO_SETUP", "is_ready": False, "reason": f"RS below threshold (Score: {lead_score:.1f}, 7D: {rs_7d:.1f}, 30D: {rs_30d:.1f})"}
 
         # C. Trend Filters (Daily and 4H)
         daily_trend = bool(row.get("daily_uptrend", False))
