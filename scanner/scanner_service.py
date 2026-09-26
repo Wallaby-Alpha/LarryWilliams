@@ -78,17 +78,23 @@ class ScannerService:
             coin_daily_closes = {}
 
             for sym in candidates:
-                # 1d klines for RS and daily trend
+                # 1d klines for RS and daily trend (100 bars)
                 kd = self.client.get_klines(sym, interval="1d", limit=100)
                 if not kd.empty and len(kd) >= 14:
                     coin_daily_map[sym] = kd
                     coin_daily_closes[sym] = kd.set_index("timestamp")["close"]
                 
-                # 1h klines for setups
-                k1h = self.client.get_klines(sym, interval="1h", limit=120)
+                # 4h klines for 50-period 4H SMA and slope (needs >= 50 bars)
+                k4h = self.client.get_klines(sym, interval="4h", limit=100)
+                if not k4h.empty and len(k4h) >= 50:
+                    coin_4h_map[sym] = k4h
+                else:
+                    coin_4h_map[sym] = DataManager.resample_ohlcv(k1h, target_rule="4h") if "k1h" in locals() and not k1h.empty else pd.DataFrame()
+
+                # 1h klines for setups & pullbacks
+                k1h = self.client.get_klines(sym, interval="1h", limit=150)
                 if not k1h.empty and len(k1h) >= 30:
                     coin_1h_map[sym] = k1h
-                    coin_4h_map[sym] = DataManager.resample_ohlcv(k1h, target_rule="4h")
 
         # 3. Evaluate BTC Regime
         btc_regime_df = self.signal_engine.evaluate_btc_regime(btc_daily)
